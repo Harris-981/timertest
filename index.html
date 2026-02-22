@@ -2,32 +2,64 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>我的計時器</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usagi 活力計時器 🐰</title>
     <style>
-        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f2f5; }
-        .card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; }
-        #display { font-size: 3rem; font-weight: bold; margin: 1rem 0; color: #1a73e8; }
-        button { padding: 10px 20px; font-size: 1rem; cursor: pointer; border: none; border-radius: 5px; background: #1a73e8; color: white; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            display: flex; justify-content: center; align-items: center; 
+            height: 100vh; margin: 0; background: #fff9c4; 
+        }
+        .card { 
+            background: white; padding: 2.5rem; border-radius: 20px; 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1); text-align: center; width: 300px;
+        }
+        /* Usagi 圖片動畫 */
+        .usagi-img { 
+            width: 150px; height: 150px; margin-bottom: 10px;
+            transition: transform 0.3s ease;
+        }
+        .bouncing { animation: bounce 0.5s infinite alternate; }
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-20px); }
+        }
+
+        #display { font-size: 3.5rem; font-weight: bold; margin: 15px 0; color: #fbc02d; text-shadow: 2px 2px #fff; }
+        input { width: 60px; padding: 8px; font-size: 1.2rem; border-radius: 8px; border: 2px solid #fbc02d; text-align: center; }
+        .controls { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
+        button { 
+            padding: 10px 20px; font-size: 1rem; cursor: pointer; border: none; 
+            border-radius: 25px; background: #fbc02d; color: white; font-weight: bold;
+            transition: 0.2s;
+        }
+        button:hover { background: #f9a825; transform: scale(1.05); }
+        button:disabled { background: #ccc; }
     </style>
 </head>
 <body>
+
     <div class="card">
-        <h2>已連線時間</h2>
-        <div id="display">00:00:00</div>
-        <button onclick="reset()">重設</button>
+        <img id="usagi" class="usagi-img" src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJtZzRocnk1ZzRzM3N3N2N6N2N6N2N6N2N6N2N6N2N6N2N6JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1z/vA806hG5tK58V2k8pU/giphy.gif" alt="Usagi">
+        
+        <div>
+            設為 <input type="number" id="minutes" value="1" min="1"> 分鐘
+        </div>
+        
+        <div id="display">01:00</div>
+
+        <div class="controls">
+            <button id="startBtn" onclick="startTimer()">開始！</button>
+            <button onclick="resetTimer()">重設</button>
+        </div>
     </div>
 
+    <audio id="startSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
+    <audio id="endSound" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3"></audio>
+
     <script>
-        let seconds = 0;
-        function updateTimer() {
-            seconds++;
-            const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
-            const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
-            const s = String(seconds % 60).padStart(2, '0');
-            document.getElementById('display').innerText = `${h}:${m}:${s}`;
-        }
-        function reset() { seconds = 0; document.getElementById('display').innerText = "00:00:00"; }
-        setInterval(updateTimer, 1000);
-    </script>
-</body>
-</html>
+        let timeLeft;
+        let timerId = null;
+        const display = document.getElementById('display');
+        const usagi = document.getElementById('usagi');
+        const startSound = document.
