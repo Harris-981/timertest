@@ -11,46 +11,52 @@
             height: 100vh; margin: 0; background: #fff9c4; 
         }
         .card { 
-            background: white; padding: 2.5rem; border-radius: 20px; 
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1); text-align: center; width: 300px;
+            background: white; padding: 2rem; border-radius: 25px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15); text-align: center; width: 320px;
+            border: 5px solid #fbc02d;
         }
         /* Usagi 圖片動畫 */
-        .usagi-img { 
-            width: 150px; height: 150px; margin-bottom: 10px;
-            transition: transform 0.3s ease;
-        }
-        .bouncing { animation: bounce 0.5s infinite alternate; }
+        .usagi-container { height: 160px; display: flex; justify-content: center; align-items: center; }
+        .usagi-img { width: 140px; transition: 0.3s; }
+        
+        /* 跳動動畫 */
+        .bouncing { animation: bounce 0.4s infinite alternate ease-in-out; }
         @keyframes bounce {
-            from { transform: translateY(0); }
-            to { transform: translateY(-20px); }
+            from { transform: translateY(0) scale(1); }
+            to { transform: translateY(-25px) scale(1.05); }
         }
 
-        #display { font-size: 3.5rem; font-weight: bold; margin: 15px 0; color: #fbc02d; text-shadow: 2px 2px #fff; }
-        input { width: 60px; padding: 8px; font-size: 1.2rem; border-radius: 8px; border: 2px solid #fbc02d; text-align: center; }
-        .controls { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
+        #display { font-size: 4rem; font-weight: bold; margin: 10px 0; color: #fbc02d; text-shadow: 2px 2px #fff; }
+        .input-group { margin: 15px 0; font-weight: bold; color: #856404; }
+        input { width: 60px; padding: 8px; font-size: 1.2rem; border-radius: 10px; border: 3px solid #fbc02d; text-align: center; outline: none; }
+        
+        .controls { display: flex; gap: 10px; justify-content: center; margin-top: 15px; }
         button { 
-            padding: 10px 20px; font-size: 1rem; cursor: pointer; border: none; 
-            border-radius: 25px; background: #fbc02d; color: white; font-weight: bold;
-            transition: 0.2s;
+            padding: 12px 25px; font-size: 1.1rem; cursor: pointer; border: none; 
+            border-radius: 50px; background: #fbc02d; color: white; font-weight: bold;
+            box-shadow: 0 4px 0 #f9a825; transition: 0.1s;
         }
-        button:hover { background: #f9a825; transform: scale(1.05); }
-        button:disabled { background: #ccc; }
+        button:active { transform: translateY(3px); box-shadow: none; }
+        button:disabled { background: #e0e0e0; box-shadow: 0 4px 0 #bdbdbd; cursor: not-allowed; }
+        .reset-btn { background: #ff8a65; box-shadow: 0 4px 0 #e64a19; }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <img id="usagi" class="usagi-img" src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJtZzRocnk1ZzRzM3N3N2N6N2N6N2N6N2N6N2N6N2N6N2N6JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1z/vA806hG5tK58V2k8pU/giphy.gif" alt="Usagi">
+        <div class="usagi-container">
+            <img id="usagi" class="usagi-img" src="https://res.cloudinary.com/dxfq3iotg/image/upload/v1557832771/animated_rabbit.gif" alt="Usagi">
+        </div>
         
-        <div>
-            設為 <input type="number" id="minutes" value="1" min="1"> 分鐘
+        <div class="input-group">
+            倒數 <input type="number" id="minutes" value="1" min="1" max="99"> 分鐘
         </div>
         
         <div id="display">01:00</div>
 
         <div class="controls">
             <button id="startBtn" onclick="startTimer()">開始！</button>
-            <button onclick="resetTimer()">重設</button>
+            <button class="reset-btn" onclick="resetTimer()">重設</button>
         </div>
     </div>
 
@@ -62,4 +68,66 @@
         let timerId = null;
         const display = document.getElementById('display');
         const usagi = document.getElementById('usagi');
-        const startSound = document.
+        const minutesInput = document.getElementById('minutes');
+        const startBtn = document.getElementById('startBtn');
+
+        function updateDisplay(seconds) {
+            const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+            const s = String(seconds % 60).padStart(2, '0');
+            display.innerText = `${m}:${s}`;
+        }
+
+        function startTimer() {
+            if (timerId !== null) return; // 避免重複啟動
+
+            const mins = parseInt(minutesInput.value);
+            if (isNaN(mins) || mins <= 0) {
+                alert("請輸入正確的分鐘數喔！Ura！");
+                return;
+            }
+
+            timeLeft = mins * 60;
+            updateDisplay(timeLeft);
+            
+            // 介面與動畫處理
+            startBtn.disabled = true;
+            minutesInput.disabled = true;
+            usagi.classList.add('bouncing');
+            document.getElementById('startSound').play().catch(()=>{}); 
+
+            timerId = setInterval(() => {
+                timeLeft--;
+                updateDisplay(timeLeft);
+
+                if (timeLeft <= 0) {
+                    stopTimer();
+                    document.getElementById('endSound').play().catch(()=>{});
+                    alert("Yaha! 時間到了！！🐰✨");
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerId);
+            timerId = null;
+            startBtn.disabled = false;
+            minutesInput.disabled = false;
+            usagi.classList.remove('bouncing');
+        }
+
+        function resetTimer() {
+            stopTimer();
+            const mins = parseInt(minutesInput.value) || 1;
+            updateDisplay(mins * 60);
+        }
+
+        // 當使用者手動改分鐘數時，同步顯示
+        minutesInput.addEventListener('input', () => {
+            if (timerId === null) {
+                const mins = parseInt(minutesInput.value) || 0;
+                updateDisplay(mins * 60);
+            }
+        });
+    </script>
+</body>
+</html>
