@@ -13,44 +13,36 @@
         .card { 
             background: white; padding: 2rem; border-radius: 25px; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.15); text-align: center; width: 340px;
-            border: 5px solid #fbc02d; position: relative;
+            border: 5px solid #fbc02d;
         }
-        /* 圖片容器與文字疊加 */
         .usagi-container { 
             height: 180px; display: flex; justify-content: center; align-items: center; 
-            position: relative; overflow: visible; 
+            position: relative; margin-bottom: 10px;
         }
-        .usagi-img { width: 140px; z-index: 1; }
+        .usagi-img { width: 140px; z-index: 1; border-radius: 15px; }
         
-        /* 浮動在圖片上的時間文字 */
         .time-overlay {
-            position: absolute;
-            top: 10px;
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #ff6f00;
-            background: rgba(255, 255, 255, 0.7);
-            padding: 2px 10px;
-            border-radius: 15px;
-            z-index: 2;
-            pointer-events: none;
-            border: 2px solid #fbc02d;
+            position: absolute; top: 0px; font-size: 1.2rem; font-weight: bold;
+            color: #ff6f00; background: rgba(255, 255, 255, 0.8);
+            padding: 4px 12px; border-radius: 20px; z-index: 2;
+            border: 2px solid #fbc02d; white-space: nowrap;
         }
 
         .bouncing { animation: bounce 0.4s infinite alternate ease-in-out; }
-        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-25px); } }
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-20px); } }
 
-        #display { font-size: 3.5rem; font-weight: bold; margin: 10px 0; color: #fbc02d; }
-        .input-group { margin: 15px 0; font-weight: bold; color: #856404; display: flex; justify-content: center; gap: 5px; align-items: center; }
-        input { width: 50px; padding: 8px; font-size: 1.1rem; border-radius: 10px; border: 3px solid #fbc02d; text-align: center; }
+        #display { font-size: 3.5rem; font-weight: bold; margin: 10px 0; color: #fbc02d; line-height: 1; }
+        .input-group { margin: 15px 0; font-weight: bold; color: #856404; display: flex; justify-content: center; gap: 8px; align-items: center; }
+        input { width: 55px; padding: 8px; font-size: 1.1rem; border-radius: 10px; border: 3px solid #fbc02d; text-align: center; }
         
-        .controls { display: flex; gap: 10px; justify-content: center; }
+        .controls { display: flex; gap: 10px; justify-content: center; margin-top: 10px; }
         button { 
             padding: 12px 25px; font-size: 1.1rem; cursor: pointer; border: none; 
             border-radius: 50px; background: #fbc02d; color: white; font-weight: bold;
-            box-shadow: 0 4px 0 #f9a825;
+            box-shadow: 0 4px 0 #f9a825; transition: 0.1s;
         }
-        button:disabled { background: #e0e0e0; box-shadow: 0 4px 0 #bdbdbd; }
+        button:active { transform: translateY(2px); box-shadow: 0 2px 0 #f9a825; }
+        button:disabled { background: #e0e0e0; box-shadow: 0 4px 0 #bdbdbd; cursor: not-allowed; }
         .reset-btn { background: #ff8a65; box-shadow: 0 4px 0 #e64a19; }
     </style>
 </head>
@@ -58,7 +50,7 @@
 
     <div class="card">
         <div class="usagi-container">
-            <div id="timeOverlay" class="time-overlay">00:00:00</div>
+            <div id="timeOverlay" class="time-overlay">載入中...</div>
             <img id="usagi" class="usagi-img" src="usage.png" alt="Usagi">
         </div>
         
@@ -70,8 +62,8 @@
         <div id="display">01:00</div>
 
         <div class="controls">
-            <button id="startBtn" onclick="startTimer()">開始！</button>
-            <button class="reset-btn" onclick="resetTimer()">重設</button>
+            <button id="startBtn">開始！</button>
+            <button id="resetBtn" class="reset-btn">重設</button>
         </div>
     </div>
 
@@ -81,7 +73,6 @@
     <script>
         let timeLeft;
         let timerId = null;
-        let clockId = null;
 
         const display = document.getElementById('display');
         const timeOverlay = document.getElementById('timeOverlay');
@@ -89,26 +80,100 @@
         const unaSound = document.getElementById('unaSound');
         const yahaSound = document.getElementById('yahaSound');
         const startBtn = document.getElementById('startBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const minInput = document.getElementById('minutes');
+        const secInput = document.getElementById('secondsInput');
 
-        // 顯示目前的時鐘 (當沒有在倒數時)
-        function updateClock() {
+        // 每秒更新「現在時間」的時鐘邏輯
+        function tick() {
             if (timerId === null) {
                 const now = new Date();
-                timeOverlay.innerText = now.toLocaleTimeString('zh-TW', { hour12: false });
-                timeOverlay.style.color = "#ff6f00"; // 時鐘顏色
+                const h = String(now.getHours()).padStart(2, '0');
+                const m = String(now.getMinutes()).padStart(2, '0');
+                const s = String(now.getSeconds()).padStart(2, '0');
+                timeOverlay.innerText = `現在時間 ${h}:${m}:${s}`;
+                timeOverlay.style.color = "#ff6f00";
             }
         }
-        clockId = setInterval(updateClock, 1000);
-        updateClock();
+        setInterval(tick, 1000);
+        tick();
 
         function updateDisplay(totalSeconds) {
             const m = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
             const s = String(totalSeconds % 60).padStart(2, '0');
             display.innerText = `${m}:${s}`;
-            
-            // 倒數時，圖片上方的文字顯示剩餘時間
-            if (timerId !== null) {
-                timeOverlay.innerText = `剩餘 ${totalSeconds}s`;
-                timeOverlay.style.color = "#d32f2f"; // 倒數顏色
-            }
         }
+
+        function startTimer() {
+            if (timerId !== null) return;
+
+            const mVal = parseInt(minInput.value) || 0;
+            const sVal = parseInt(secInput.value) || 0;
+            timeLeft = (mVal * 60) + sVal;
+
+            if (timeLeft <= 0) {
+                alert("請輸入時間！");
+                return;
+            }
+
+            // 鎖定介面
+            startBtn.disabled = true;
+            minInput.disabled = true;
+            secInput.disabled = true;
+            usagi.classList.add('bouncing');
+
+            timerId = setInterval(() => {
+                timeLeft--;
+                updateDisplay(timeLeft);
+                
+                // 更新圖片上方的剩餘時間
+                timeOverlay.innerText = `剩餘倒數：${timeLeft}秒`;
+                timeOverlay.style.color = "#d32f2f";
+
+                // Una 音效 (不切斷播放)
+                if (unaSound.paused || unaSound.ended) {
+                    unaSound.play().catch(e => console.log("音效播放被擋下"));
+                }
+
+                if (timeLeft <= 0) {
+                    stopTimer();
+                    yahaSound.play().catch(e => {});
+                    alert("Yaha! 時間到啦！");
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerId);
+            timerId = null;
+            startBtn.disabled = false;
+            minInput.disabled = false;
+            secInput.disabled = false;
+            usagi.classList.remove('bouncing');
+            tick(); // 恢復時鐘
+        }
+
+        function handleReset() {
+            stopTimer();
+            const mVal = parseInt(minInput.value) || 0;
+            const sVal = parseInt(secInput.value) || 0;
+            updateDisplay((mVal * 60) + sVal);
+        }
+
+        // 綁定按鈕事件 (避免使用 HTML 內聯 onclick，更穩定)
+        startBtn.addEventListener('click', startTimer);
+        resetBtn.addEventListener('click', handleReset);
+
+        // 監聽輸入框變化
+        [minInput, secInput].forEach(input => {
+            input.addEventListener('input', () => {
+                if (timerId === null) {
+                    const m = parseInt(minInput.value) || 0;
+                    const s = parseInt(secInput.value) || 0;
+                    updateDisplay((m * 60) + s);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
