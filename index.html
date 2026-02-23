@@ -1,3 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usagi 活力計時器 🐰</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            display: flex; justify-content: center; align-items: center; 
+            height: 100vh; margin: 0; background: #fff9c4; 
+        }
+        .card { 
+            background: white; padding: 2rem; border-radius: 25px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15); text-align: center; width: 340px;
+            border: 5px solid #fbc02d;
+        }
+        .usagi-container { 
+            height: 180px; display: flex; justify-content: center; align-items: center; 
+            position: relative; margin-bottom: 10px;
+        }
+        .usagi-img { width: 140px; z-index: 1; border-radius: 15px; }
+        
+        .time-overlay {
+            position: absolute; top: 0px; font-size: 1.2rem; font-weight: bold;
+            color: #ff6f00; background: rgba(255, 255, 255, 0.8);
+            padding: 4px 12px; border-radius: 20px; z-index: 2;
+            border: 2px solid #fbc02d; white-space: nowrap;
+        }
+
+        .bouncing { animation: bounce 0.4s infinite alternate ease-in-out; }
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-20px); } }
+
+        #display { font-size: 3.5rem; font-weight: bold; margin: 10px 0; color: #fbc02d; line-height: 1; }
+        .input-group { margin: 15px 0; font-weight: bold; color: #856404; display: flex; justify-content: center; gap: 8px; align-items: center; }
+        input { width: 55px; padding: 8px; font-size: 1.1rem; border-radius: 10px; border: 3px solid #fbc02d; text-align: center; }
+        
+        .controls { display: flex; gap: 10px; justify-content: center; margin-top: 10px; }
+        button { 
+            padding: 12px 25px; font-size: 1.1rem; cursor: pointer; border: none; 
+            border-radius: 50px; background: #fbc02d; color: white; font-weight: bold;
+            box-shadow: 0 4px 0 #f9a825; transition: 0.1s;
+        }
+        button:active { transform: translateY(2px); box-shadow: 0 2px 0 #f9a825; }
+        button:disabled { background: #e0e0e0; box-shadow: 0 4px 0 #bdbdbd; cursor: not-allowed; }
+        .reset-btn { background: #ff8a65; box-shadow: 0 4px 0 #e64a19; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <div class="usagi-container">
+            <div id="timeOverlay" class="time-overlay">載入中...</div>
+            <img id="usagi" class="usagi-img" src="usagi.png" alt="Usagi">
+        </div>
+        
+        <div class="input-group">
+            <input type="number" id="minutes" value="1" min="0"> 分
+            <input type="number" id="secondsInput" value="0" min="0" max="59"> 秒
+        </div>
+        
+        <div id="display">01:00</div>
+
+        <div class="controls">
+            <button id="startBtn">開始！</button>
+            <button id="resetBtn" class="reset-btn">重設</button>
+        </div>
+    </div>
+
+    <audio id="unaSound" src="una.mp3"></audio>
+    <audio id="yahaSound" src="yaha.mp3"></audio>
+        
+<script>
 let timeLeft;
         let timerId = null;
 
