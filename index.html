@@ -15,6 +15,13 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.15); text-align: center; width: 340px;
             border: 5px solid #fbc02d;
         }
+        /* 登入專用樣式 */
+        #loginOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: #fbc02d; z-index: 9999; 
+            display: flex; justify-content: center; align-items: center;
+        }
+
         .usagi-container { 
             height: 180px; display: flex; justify-content: center; align-items: center; 
             position: relative; margin-bottom: 10px;
@@ -33,8 +40,11 @@
 
         #display { font-size: 3.5rem; font-weight: bold; margin: 10px 0; color: #fbc02d; line-height: 1; }
         .input-group { margin: 15px 0; font-weight: bold; color: #856404; display: flex; justify-content: center; gap: 8px; align-items: center; }
-        input { width: 55px; padding: 8px; font-size: 1.1rem; border-radius: 10px; border: 3px solid #fbc02d; text-align: center; }
+        input { width: 55px; padding: 8px; font-size: 1.1rem; border-radius: 10px; border: 3px solid #fbc02d; text-align: center; outline: none; }
         
+        /* 登入框的輸入框加寬 */
+        #loginID, #loginPW { width: 80%; margin-bottom: 10px; }
+
         .controls { display: flex; gap: 10px; justify-content: center; margin-top: 10px; }
         button { 
             padding: 12px 25px; font-size: 1.1rem; cursor: pointer; border: none; 
@@ -47,6 +57,20 @@
     </style>
 </head>
 <body>
+
+    <div id="loginOverlay">
+        <div class="card" style="width:280px;">
+            <h2 style="color:#856404;">🐰 Usagi 認證</h2>
+            <div style="margin-bottom:5px;">
+                <input type="text" id="loginID" placeholder="帳號" style="width:200px">
+            </div>
+            <div style="margin-bottom:15px;">
+                <input type="password" id="loginPW" placeholder="密碼" style="width:200px">
+            </div>
+            <button id="loginBtn">登入 Yaha!</button>
+            <p id="errorMsg" style="color:red; font-size:0.8rem; margin-top:10px; display:none;">密碼錯誤，被烏薩奇踢飛！</p>
+        </div>
+    </div>
 
     <div class="card">
         <div class="usagi-container">
@@ -69,9 +93,38 @@
 
     <audio id="unaSound" src="una.mp3"></audio>
     <audio id="yahaSound" src="yaha.mp3"></audio>
-        
-<script>
-let timeLeft;
+
+    <script>
+        // --- 登入邏輯 ---
+        const loginOverlay = document.getElementById('loginOverlay');
+        const loginBtn = document.getElementById('loginBtn');
+        const loginID = document.getElementById('loginID');
+        const loginPW = document.getElementById('loginPW');
+        const errorMsg = document.getElementById('errorMsg');
+
+        function checkLogin() {
+            // 你可以在這改帳號密碼
+            if (loginID.value === "usagi" && loginPW.value === "una") {
+                loginOverlay.style.display = 'none';
+                sessionStorage.setItem('isLogged', 'true'); // 記憶登入狀態
+                yahaSound.play().catch(()=>{});
+            } else {
+                errorMsg.style.display = 'block';
+                loginPW.value = "";
+            }
+        }
+
+        // 檢查是否已經登入過 (Session 級別)
+        if (sessionStorage.getItem('isLogged') === 'true') {
+            loginOverlay.style.display = 'none';
+        }
+
+        loginBtn.addEventListener('click', checkLogin);
+        // 按下 Enter 也能登入
+        loginPW.addEventListener('keypress', (e) => { if(e.key === 'Enter') checkLogin(); });
+
+        // --- 計時器邏輯 ---
+        let timeLeft;
         let timerId = null;
 
         const display = document.getElementById('display');
@@ -105,11 +158,9 @@ let timeLeft;
 
         function startTimer() {
             if (timerId !== null) return;
-
             const mVal = parseInt(minInput.value) || 0;
             const sVal = parseInt(secInput.value) || 0;
             timeLeft = (mVal * 60) + sVal;
-
             if (timeLeft <= 0) return;
 
             startBtn.disabled = true;
@@ -124,22 +175,12 @@ let timeLeft;
                 timeOverlay.style.color = "#d32f2f";
 
                 if (timeLeft > 0) {
-                    // 倒數中播放 Una
-                    if (unaSound.paused || unaSound.ended) {
-                        unaSound.play().catch(e => {});
-                    }
+                    if (unaSound.paused || unaSound.ended) unaSound.play().catch(()=>{});
                 } else {
-                    // 剛好到 0 秒：立刻停止計時並播放 Yaha
                     stopTimer();
-                    
-                    // 播放 Yaha 聲
                     yahaSound.currentTime = 0;
-                    yahaSound.play().catch(e => {});
-
-                    // 延遲一點點再跳彈窗，才不會擋住聲音播放
-                    setTimeout(() => {
-                        alert("Yaha! 時間到啦！🐰✨");
-                    }, 100);
+                    yahaSound.play().catch(()=>{});
+                    setTimeout(() => { alert("Yaha! 時間到啦！🐰✨"); }, 100);
                 }
             }, 1000);
         }
@@ -154,22 +195,17 @@ let timeLeft;
             tick();
         }
 
-        function handleReset() {
-            stopTimer();
-            const mVal = parseInt(minInput.value) || 0;
-            const sVal = parseInt(secInput.value) || 0;
-            updateDisplay((mVal * 60) + sVal);
-        }
-
         startBtn.addEventListener('click', startTimer);
-        resetBtn.addEventListener('click', handleReset);
+        resetBtn.addEventListener('click', () => {
+            stopTimer();
+            updateDisplay((parseInt(minInput.value)||0)*60 + (parseInt(secInput.value)||0));
+        });
 
         [minInput, secInput].forEach(input => {
             input.addEventListener('input', () => {
-                if (timerId === null) {
-                    const m = parseInt(minInput.value) || 0;
-                    const s = parseInt(secInput.value) || 0;
-                    updateDisplay((m * 60) + s);
-                }
+                if (timerId === null) updateDisplay((parseInt(minInput.value)||0)*60 + (parseInt(secInput.value)||0));
             });
         });
+    </script>
+</body>
+</html>
